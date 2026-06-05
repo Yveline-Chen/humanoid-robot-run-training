@@ -50,8 +50,10 @@
             return nearestIndex;
         }
 
-        void FixedUpdate()
+        protected override void FixedUpdate()
         {
+            base.FixedUpdate();
+            
             //Alive Reward
             AddReward(0.01f);
 

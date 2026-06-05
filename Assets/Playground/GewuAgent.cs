@@ -558,7 +558,7 @@ public class GewuAgent : Agent
         
     }
 
-    void FixedUpdate()
+    protected virtual void FixedUpdate()
     {
         tp++;
         tq++;
