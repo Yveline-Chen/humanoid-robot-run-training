@@ -27,8 +27,34 @@
             totalWaypointsReached = 0;
         }
 
+        private int GetNearestWaypointIndex()
+        {
+            int nearestIndex = 0;
+            float nearestDist = float.MaxValue;
+
+            for (int i = 0; i < waypointManager.GetWaypointCount(); i++)
+            {
+                Transform wp = waypointManager.GetWaypoint(i);
+                Vector3 toWP = wp.position - transform.position;
+    
+                if (Vector3.Dot(transform.forward, toWP) <= 0) continue;
+        
+                float dist = toWP.magnitude;
+                
+                if (dist < nearestDist)
+                {
+                    nearestDist = dist;
+                    nearestIndex = i;
+                }
+            }
+            return nearestIndex;
+        }
+
         void FixedUpdate()
         {
+            //Alive Reward
+            AddReward(0.01f);
+
             if (waypointManager == null || rootBody == null) return;
 
             Transform targetWP = waypointManager.GetWaypoint(currentWaypointIndex);
@@ -55,7 +81,6 @@
                 {
                     //big reward when finishing whole lap
                     AddReward(20.0f);       
-                    Debug.Log($"{name} 完成一圈！");
                     EndEpisode();
                     return;
                 }
