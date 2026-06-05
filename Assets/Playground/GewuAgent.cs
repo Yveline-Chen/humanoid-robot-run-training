@@ -84,11 +84,8 @@ public class GewuAgent : Agent
     ArticulationBody[] acts = new ArticulationBody[16];
     GameObject robot;
 
-    //new variables for Playground_run_training project
-    private WaypointManager waypointManager;
-    private int currentWaypointIndex = 0;
-    private int totalWaypointsReached = 0;
-    private float waypointReachDistance = 3f;
+    //new: allow subclass prohibiting original speed reward 
+    protected bool useCustomReward = false;
 
     float[] kb = new float[16] { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30  };
     float[] kb1 = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -170,10 +167,6 @@ public class GewuAgent : Agent
             arts[0].SetJointPositions(P0);
             arts[0].SetJointVelocities(W0);
         }
-        //new: reset waypoint in evey episode 
-        waypointManager = FindObjectOfType<WaypointManager>();
-        currentWaypointIndex = 0;
-        totalWaypointsReached = 0;
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -538,32 +531,6 @@ public class GewuAgent : Agent
         LastBmotion = BipedTargetMotion;
         LastQmotion = QuadrupedTargetMotion;
         LastLmotion = LegwheelTargetMotion;
-
-        //new: Waypoint tracking reward
-        if (waypointManager != null)
-        {
-            Transform targetWP = waypointManager.GetWaypoint(currentWaypointIndex);
-            float dist = Vector3.Distance(transform.position, targetWP.position);
- 
-            //when reaching a waypoint
-            if (dist < waypointReachDistance)
-            {
-                AddReward(3.0f);
-                currentWaypointIndex++; 
-                totalWaypointsReached++;
-
-                //finish whole lap
-                if (totalWaypointsReached >= waypointManager.GetWaypointCount())
-                {
-                    AddReward(20.0f);
-                    EndEpisode();
-                }
-            }
-
-            Vector3 dir = (targetWP.position - transform.position).normalized;
-            float alignment = Vector3.Dot(transform.forward, dir);
-            AddReward(alignment * 0.01f);
-        }
     }
 
     void SetJointTargetDeg(ArticulationBody joint, float x)
@@ -620,21 +587,15 @@ public class GewuAgent : Agent
         var ori_reward3 = -0.1f * Mathf.Abs(EulerTrans(body.eulerAngles[2]));
         var vel_reward1 = vel[2] - Mathf.Abs(vel[0]);
         var vel_reward2 = vel[2] - Mathf.Abs(vel[0]) + kh * Mathf.Abs(vel[1]);
-        var reward = live_reward + (ori_reward1 + ori_reward2 + ori_reward3) * ko + vel_reward2;
+        var reward = live_reward + (ori_reward1 + ori_reward2 + ori_reward3) * ko;
+        if (!useCustomReward)
+        {
+            reward += vel_reward2;
+        }
         AddReward(reward);
         if (Mathf.Abs(EulerTrans(body.eulerAngles[0])) > 20f || Mathf.Abs(EulerTrans(body.eulerAngles[2])) > 20f || tt>=1000)
         {
             if(train)EndEpisode();
-        }
-    }
-    
-    //new: out-of-bound penalty
-    void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("OutOfBounds"))
-        {
-        AddReward(-2.0f);
-        EndEpisode();
         }
     }
 
