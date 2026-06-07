@@ -1,4 +1,4 @@
-    using UnityEngine;
+using UnityEngine;
 
     public class TrackAgent : GewuAgent
     {
@@ -11,20 +11,24 @@
         public float laneOffset = 0f;
 
         private ArticulationBody rootBody;
+        private Vector3 startPos;
+        private bool isFinishing;
 
         public override void Initialize()
         {
             base.Initialize();
-            rootBody = GetComponentInChildren<ArticulationBody>();
+            rootBody = arts[0];
+            startPos = transform.position;
             waypointManager = FindObjectOfType<WaypointManager>();
-        }
+        }   
 
         public override void OnEpisodeBegin()
         {
             base.OnEpisodeBegin();     
-            useCustomReward = true;          
+            useCustomReward = true;         
             currentWaypointIndex = 0;
             totalWaypointsReached = 0;
+            isFinishing = false; 
         }
 
         private int GetNearestWaypointIndex()
@@ -50,14 +54,30 @@
             return nearestIndex;
         }
 
-        protected override void FixedUpdate()
+        void FixedUpdate()
         {
-            base.FixedUpdate();
-            
-            //Alive Reward
+            GewuFixedUpdate();
+
+            // Alive Reward
             AddReward(0.01f);
 
             if (waypointManager == null || rootBody == null) return;
+            if (isFinishing)
+                {
+                    Vector3 finishPos = startPos;
+                    finishPos.y = transform.position.y;
+                    Vector3 toFinish = finishPos - transform.position;
+                    float fs = Vector3.Dot(rootBody.velocity, toFinish.normalized);
+                    AddReward(fs * 0.1f);
+                    AddReward(Vector3.Dot(transform.forward, toFinish.normalized) * 0.02f);
+
+                    if (toFinish.magnitude < waypointReachDistance)
+                    {
+                        AddReward(20.0f);
+                        EndEpisode();
+                    }
+                    return;
+                }
 
             Transform targetWP = waypointManager.GetWaypoint(currentWaypointIndex);
             if (targetWP == null) return;
@@ -67,12 +87,12 @@
 
            //Speed Reward
            float effectiveSpeed = Vector3.Dot(rootBody.velocity, toTarget);
-           AddReward(effectiveSpeed * 0.005f);
-           
+           AddReward(effectiveSpeed * 0.1f);
+
            //Direction Reward
            float alignment = Vector3.Dot(transform.forward, toTarget);
-           AddReward(alignment * 0.005f);
-
+           AddReward(alignment * 0.02f);
+           
            //Waypoint Tracking Reward
            float dist = Vector3.Distance(transform.position, targetPos);
            if (dist < waypointReachDistance)
@@ -83,7 +103,7 @@
                 {
                     //big reward when finishing whole lap
                     AddReward(20.0f);       
-                    EndEpisode();
+                    isFinishing = true;
                     return;
                 }
                 else AddReward(3.0f); 
@@ -103,6 +123,3 @@
         
 
     }
-
-
-    

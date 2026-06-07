@@ -10,14 +10,14 @@ using Unity.Sentis;
 
 public class GewuAgent : Agent
 {
-    int tp = 0;
-    int tq = 0;
-    int tt = 0;
+    protected int tp = 0;
+    protected int tq = 0;
+    protected int tt = 0;
     public bool fixbody = false;
     public bool train;
-    float uff = 0;
-    float uf1 = 0;
-    float uf2 = 0;
+    protected float uff = 0;
+    protected float uf1 = 0;
+    protected float uf2 = 0;
     float[] u = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     float[] ut = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     float[] utt = new float[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -80,8 +80,8 @@ public class GewuAgent : Agent
     List<Transform> bodypart = new List<Transform>();
     Vector3 pos0;
     Quaternion rot0;
-    ArticulationBody[] arts = new ArticulationBody[40];
-    ArticulationBody[] acts = new ArticulationBody[16];
+    protected ArticulationBody[] arts = new ArticulationBody[40];
+    protected ArticulationBody[] acts = new ArticulationBody[16];
     GameObject robot;
 
     //new: allow subclass prohibiting original speed reward 
@@ -117,7 +117,7 @@ public class GewuAgent : Agent
         arts[0].GetJointVelocities(W0);
     }
 
-    private bool _isClone = false; 
+    protected bool _isClone = false; 
     void Start()
     {
         Time.fixedDeltaTime = 0.01f;
@@ -138,7 +138,11 @@ public class GewuAgent : Agent
                 GameObject clone = Instantiate(gameObject); 
                 clone.transform.position = transform.position + new Vector3(i * 2f, 0, 0);
                 clone.name = $"{name}_Clone_{i}"; 
-                clone.GetComponent<GewuAgent>()._isClone = true; 
+                var agent = clone.GetComponent<GewuAgent>();
+                if (agent == null) 
+                agent = clone.GetComponent<TrackAgent>();
+                if (agent != null) 
+                agent._isClone = true;
             }
         }
     }
@@ -192,7 +196,7 @@ public class GewuAgent : Agent
         for (int i = 0; i < 12; i++) utotal[i] = 0;
         var continuousActions = actionBuffers.ContinuousActions;
         var kk = 0.9f;
-        
+
         for (int i = 0; i < ActionNum; i++)
         {
             u[i] = u[i] * kk + (1 - kk) * continuousActions[i];
@@ -310,9 +314,9 @@ public class GewuAgent : Agent
             {
                 //biped run with 6 joints in each leg, modify the following parameters to optimize the gait if needed***********************
                 T1 = 25;//gait period
-                dh = 40;//foot stepping height
+                dh = 15;//foot stepping height
                 d0 = 20;//knee bend angle
-                float[] ktemp = new float[12] { 10, 10, 60, 30, 60, 10,    10, 10, 60, 30, 60, 10 };//feedback ratio, represents the action space
+                float[] ktemp = new float[12] { 30, 10, 60, 30, 60, 10, 30, 10, 60, 30, 60, 10 };//feedback ratio, represents the action space
                 //***************************************************************************************************************************
                 for (int i = 0; i < 12; i++) kb[i] = ktemp[i];
                 utotal[2] += (dh * uf1 + d0);
@@ -558,8 +562,18 @@ public class GewuAgent : Agent
         
     }
 
-    protected virtual void FixedUpdate()
+    void FixedUpdate()
     {
+        if (this is TrackAgent) return;
+        GewuFixedUpdate();
+    }
+    protected void GewuFixedUpdate()
+    {
+        if (!_isClone)
+        {
+            float angle0 = Mathf.Abs(EulerTrans(body.eulerAngles[0]));
+            float angle2 = Mathf.Abs(EulerTrans(body.eulerAngles[2]));
+        }
         tp++;
         tq++;
         tt++;
@@ -581,7 +595,7 @@ public class GewuAgent : Agent
 
         var vel = body.InverseTransformDirection(arts[0].velocity);
         var wel = body.InverseTransformDirection(arts[0].angularVelocity);
-        var live_reward = 1f;
+        var live_reward = 0.05f;
         var ori_reward1 = -0.1f * Mathf.Abs(EulerTrans(body.eulerAngles[0]));
         var ori_reward2 = -2f * Mathf.Abs(wel[1]);
         var ori_reward3 = -0.1f * Mathf.Abs(EulerTrans(body.eulerAngles[2]));
@@ -593,6 +607,7 @@ public class GewuAgent : Agent
             reward += vel_reward2;
         }
         AddReward(reward);
+
         if (Mathf.Abs(EulerTrans(body.eulerAngles[0])) > 20f || Mathf.Abs(EulerTrans(body.eulerAngles[2])) > 20f || tt>=1000)
         {
             if(train)EndEpisode();
