@@ -314,6 +314,7 @@ public class GewuAgent : Agent
             {
                 //biped run with 6 joints in each leg, modify the following parameters to optimize the gait if needed***********************
                 T1 = 25;//gait period
+                ko = 0.1f;
                 dh = 15;//foot stepping height
                 d0 = 20;//knee bend angle
                 float[] ktemp = new float[12] { 30, 10, 60, 30, 60, 10, 30, 10, 60, 30, 60, 10 };//feedback ratio, represents the action space
@@ -595,7 +596,7 @@ public class GewuAgent : Agent
 
         var vel = body.InverseTransformDirection(arts[0].velocity);
         var wel = body.InverseTransformDirection(arts[0].angularVelocity);
-        var live_reward = 0.05f;
+        var live_reward = 0.3f;
         var ori_reward1 = -0.1f * Mathf.Abs(EulerTrans(body.eulerAngles[0]));
         var ori_reward2 = -2f * Mathf.Abs(wel[1]);
         var ori_reward3 = -0.1f * Mathf.Abs(EulerTrans(body.eulerAngles[2]));
@@ -608,7 +609,7 @@ public class GewuAgent : Agent
         }
         AddReward(reward);
 
-        if (Mathf.Abs(EulerTrans(body.eulerAngles[0])) > 20f || Mathf.Abs(EulerTrans(body.eulerAngles[2])) > 20f || tt>=1000)
+        if (Mathf.Abs(EulerTrans(body.eulerAngles[0])) > 20f || Mathf.Abs(EulerTrans(body.eulerAngles[2])) > 20f)
         {
             if(train)EndEpisode();
         }
