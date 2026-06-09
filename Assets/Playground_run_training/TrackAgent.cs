@@ -96,7 +96,7 @@ public class TrackAgent : GewuAgent
             float fs = Vector3.Dot(rootBody.velocity, toFinish.normalized);
             AddReward(fs * 0.1f);
 
-            if (toFinish.magnitude < 1f)
+            if (toFinish.magnitude < 0.5f)
             {
                 AddReward(20.0f);
                 EndEpisode();

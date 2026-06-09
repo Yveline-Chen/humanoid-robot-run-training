@@ -14981,7 +14981,7 @@ MonoBehaviour:
   Robot: 0
   BipedTargetMotion: 1
   BWalkPolicy: {fileID: 0}
-  BRunPolicy: {fileID: 5022602860645237092, guid: 49eb61bfc526e3143af150a0ba50958e,
+  BRunPolicy: {fileID: 5022602860645237092, guid: 2959c3c025e3722458b9d34998ba94e9,
     type: 3}
   BJumpPolicy: {fileID: 0}
   QuadrupedTargetMotion: 0
