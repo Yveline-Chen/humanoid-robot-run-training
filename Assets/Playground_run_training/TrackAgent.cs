@@ -14,6 +14,7 @@ public class TrackAgent : GewuAgent
     private Vector3 startPos;
     private bool isFinishing;
     private float rawSteer;
+    private int maxWPReached = 0;
 
     public override void Initialize()
     {
@@ -23,16 +24,36 @@ public class TrackAgent : GewuAgent
         waypointManager = FindObjectOfType<WaypointManager>();
         // Relay trigger events from root ArticulationBody to TrackAgent
         arts[0].gameObject.AddComponent<TriggerForwarder>().target = this;
+        // Debug.Log(" ActionNum: " + ActionNum);
+        // for (int i = 0; i < ActionNum; i++)
+        // Debug.Log(" acts[" + i + "] = " + acts[i].name);
     }
 
     public override void OnEpisodeBegin()
     {
         base.OnEpisodeBegin();
         useCustomReward = true;
-        currentWaypointIndex = 0;
+
+        // record furthest waypoint reached before reset
+        if (currentWaypointIndex > maxWPReached)
+        maxWPReached = currentWaypointIndex;
+
+        // random start from [WP_01, maxWPReached]
+        int startIdx = Random.Range(1, Mathf.Max(2, maxWPReached + 1));
+
+        currentWaypointIndex = startIdx;
         totalWaypointsReached = 0;
         isFinishing = false;
         waypointReachDistance = 5f;
+
+        if (waypointManager != null)
+        {
+            Vector3 spawnPos = waypointManager.GetWaypoint(startIdx).position + waypointManager.GetWaypoint(startIdx).right * laneOffset;
+            spawnPos.y = rootBody.transform.position.y;
+            arts[0].TeleportRoot(spawnPos, Quaternion.identity);
+            arts[0].velocity = Vector3.zero;
+            arts[0].angularVelocity = Vector3.zero;
+        }
     }
 
     public override void CollectObservations(VectorSensor sensor)
@@ -62,17 +83,32 @@ public class TrackAgent : GewuAgent
     {
         base.OnActionReceived(actionBuffers);
 
-        // action[1] = steering stick
         float steer = actionBuffers.ContinuousActions[1] * 20f;
         rawSteer = steer;
+        
+        // yaw joint index of OpenLoong
+        int leftIdx = 1, rightIdx = 7;
+        string robotName = this.name;
 
-        var dL = acts[1].xDrive;
+        if (robotName.Contains("X02Lite"))
+        {
+            leftIdx = 0;  
+            rightIdx = 5;
+        }
+
+        else if (robotName.Contains("G1"))
+        {
+            leftIdx = 2;  
+            rightIdx = 8;
+        }
+
+        var dL = acts[leftIdx].xDrive;
         dL.target = steer;
-        acts[1].xDrive = dL;
+        acts[leftIdx].xDrive = dL;
 
-        var dR = acts[7].xDrive;
+        var dR = acts[rightIdx].xDrive;
         dR.target = -steer;
-        acts[7].xDrive = dR;
+        acts[rightIdx].xDrive = dR;
     }
 
     void FixedUpdate()
@@ -80,7 +116,8 @@ public class TrackAgent : GewuAgent
         GewuFixedUpdate();
 
         // cancel yaw-swerving penalty
-        AddReward(0.2f * Mathf.Abs(arts[0].angularVelocity.y));
+        float yawCancel = (ActionNum == 12) ? 0.2f : 1.0f;
+        AddReward(yawCancel * Mathf.Abs(arts[0].angularVelocity.y));
 
         // alive reward
         AddReward(0.01f);
