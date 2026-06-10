@@ -14,12 +14,14 @@ public class TrackAgent : GewuAgent
     private Vector3 startPos;
     private bool isFinishing;
     private float rawSteer;
+    private float initY;
     private int maxWPReached = 0;
 
     public override void Initialize()
     {
         base.Initialize();
         rootBody = arts[0];
+        initY = rootBody.transform.position.y; 
         startPos = rootBody.transform.position;
         waypointManager = FindObjectOfType<WaypointManager>();
         // Relay trigger events from root ArticulationBody to TrackAgent
@@ -38,19 +40,26 @@ public class TrackAgent : GewuAgent
         if (currentWaypointIndex > maxWPReached)
         maxWPReached = currentWaypointIndex;
 
-        // random start from [WP_01, maxWPReached]
-        int startIdx = Random.Range(1, Mathf.Max(2, maxWPReached + 1));
-
-        currentWaypointIndex = startIdx;
+        // spawn: start line initially, random waypoints after reaching WP_04
+        bool useRandomStart = maxWPReached >= 4;
+        currentWaypointIndex = useRandomStart ? Random.Range(1, maxWPReached + 1) : 0;
         totalWaypointsReached = 0;
         isFinishing = false;
         waypointReachDistance = 5f;
 
         if (waypointManager != null)
         {
-            Vector3 spawnPos = waypointManager.GetWaypoint(startIdx).position + waypointManager.GetWaypoint(startIdx).right * laneOffset;
-            spawnPos.y = rootBody.transform.position.y;
-            arts[0].TeleportRoot(spawnPos, Quaternion.identity);
+            Vector3 spawnPos;
+            if (useRandomStart)
+            spawnPos = waypointManager.GetWaypoint(currentWaypointIndex).position + waypointManager.GetWaypoint(currentWaypointIndex).right * laneOffset;
+            else
+            spawnPos = startPos;
+
+            spawnPos.y = initY;
+            Vector3 lookTarget = waypointManager.GetWaypoint(Mathf.Min(currentWaypointIndex + 1, waypointManager.GetWaypointCount() - 1)).position;
+            lookTarget.y = spawnPos.y;
+            Quaternion spawnRot = Quaternion.LookRotation(lookTarget - spawnPos, Vector3.up);
+            arts[0].TeleportRoot(spawnPos, spawnRot);
             arts[0].velocity = Vector3.zero;
             arts[0].angularVelocity = Vector3.zero;
         }
@@ -83,24 +92,36 @@ public class TrackAgent : GewuAgent
     {
         base.OnActionReceived(actionBuffers);
 
-        float steer = actionBuffers.ContinuousActions[1] * 20f;
-        rawSteer = steer;
-        
-        // yaw joint index of OpenLoong
-        int leftIdx = 1, rightIdx = 7;
         string robotName = this.name;
-
+        int steerIdx, leftIdx, rightIdx;
+        float steerScale;
+        
         if (robotName.Contains("X02Lite"))
         {
-            leftIdx = 0;  
+            steerIdx = 0;   
+            leftIdx = 0;   
             rightIdx = 5;
+            steerScale = 8f;
         }
 
         else if (robotName.Contains("G1"))
         {
-            leftIdx = 2;  
+            steerIdx = 1;   
+            leftIdx = 2;   
             rightIdx = 8;
+            steerScale = 20f;
         }
+
+        else // OpenLoong
+        {
+            steerIdx = 1;   
+            leftIdx = 1;   
+            rightIdx = 7;
+            steerScale = 20f;
+        }
+
+        float steer = actionBuffers.ContinuousActions[steerIdx] * steerScale;
+        rawSteer = steer;
 
         var dL = acts[leftIdx].xDrive;
         dL.target = steer;
@@ -112,12 +133,11 @@ public class TrackAgent : GewuAgent
     }
 
     void FixedUpdate()
-    {
+    {   
         GewuFixedUpdate();
 
         // cancel yaw-swerving penalty
-        float yawCancel = (ActionNum == 12) ? 0.2f : 1.0f;
-        AddReward(yawCancel * Mathf.Abs(arts[0].angularVelocity.y));
+        AddReward(0.2f * Mathf.Abs(arts[0].angularVelocity.y));
 
         // alive reward
         AddReward(0.01f);
@@ -178,9 +198,10 @@ public class TrackAgent : GewuAgent
         Vector3 nxtPos = nxtWP.position + nxtWP.right * laneOffset;
         Vector3 toNextWP = (nxtPos - rootBody.transform.position).normalized;
         float curveAngle = Vector3.SignedAngle(toCurrent, toNextWP, Vector3.up);
-        Vector3 desiredDir = Vector3.Slerp(toCurrent, toNextWP, 0.15f);
+        float slerp = Mathf.Clamp01(Mathf.Abs(curveAngle) / 25f) * 0.15f;
+        Vector3 desiredDir = Vector3.Slerp(toCurrent, toNextWP, slerp);
         float bodyAlignment = Vector3.Dot(rootBody.transform.forward, desiredDir);
-        AddReward(bodyAlignment * 0.3f);
+        AddReward(Mathf.Max(0, bodyAlignment) * 0.3f);
 
         // waypoint tracking reward
         float dist = Vector3.Distance(rootBody.transform.position, targetPos);

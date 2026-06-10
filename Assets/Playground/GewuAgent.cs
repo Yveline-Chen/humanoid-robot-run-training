@@ -239,6 +239,7 @@ public class GewuAgent : Agent
                 T1 = 20;//gait period
                 dh = 20;//foot stepping height
                 d0 = 15;//knee bend angle
+                ko = 0.1f;
                 float[] ktemp = new float[12] { 10, 10, 40, 60, 40, 10, 10, 40, 60, 40, 0, 0 };//feedback ratio, represents the action space
                 //***************************************************************************************************************************
                 for (int i = 0; i < 12; i++) kb[i] = ktemp[i];

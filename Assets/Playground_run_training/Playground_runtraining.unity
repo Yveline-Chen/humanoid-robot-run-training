@@ -655,7 +655,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &46699347
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -757,7 +757,8 @@ MonoBehaviour:
   Robot: 0
   BipedTargetMotion: 1
   BWalkPolicy: {fileID: 0}
-  BRunPolicy: {fileID: 0}
+  BRunPolicy: {fileID: 5022602860645237092, guid: 5d4223dde573b46458e80f30c5705fb0,
+    type: 3}
   BJumpPolicy: {fileID: 0}
   QuadrupedTargetMotion: 0
   QTrotPolicy: {fileID: 0}
@@ -15810,7 +15811,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &584752006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15906,7 +15907,7 @@ MonoBehaviour:
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
   fixbody: 0
-  train: 1
+  train: 0
   ObservationNum: 0
   ActionNum: 10
   Robot: 0
