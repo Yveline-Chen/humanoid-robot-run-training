@@ -17,6 +17,9 @@ public class TrackAgent : GewuAgent
     private float initY;
     private Quaternion initRot;
     private int maxWPReached = 0;
+    private Transform rightShoulder, leftShoulder, rightElbow, leftElbow;
+    private Vector3 shoulderBaseR, shoulderBaseL, elbowBaseR, elbowBaseL;
+    private Transform openLoongArmL, openLoongArmR;
 
     public override void Initialize()
     {
@@ -31,6 +34,62 @@ public class TrackAgent : GewuAgent
         // Debug.Log(" ActionNum: " + ActionNum);
         // for (int i = 0; i < ActionNum; i++)
         // Debug.Log(" acts[" + i + "] = " + acts[i].name);
+        // for (int i = 0; i < arts.Length; i++)
+        // Debug.Log(name + " arts[" + i + "] = " + arts[i].name);
+        openLoongArmL = null; openLoongArmR = null;
+        for (int i = 0; i < arts.Length; i++)
+        {
+            if (arts[i].name.Contains("Link_arm_l_01"))
+            openLoongArmL = arts[i].transform;
+            if (arts[i].name.Contains("Link_arm_r_01"))
+            openLoongArmR = arts[i].transform;
+        }
+        rightShoulder = null; 
+        leftShoulder = null; 
+        rightElbow = null; 
+        leftElbow = null;
+        for (int i = 0; i < arts.Length; i++)
+        {
+            string n = arts[i].name;
+
+            if (n.Contains("Link_arm_l_01")) 
+            { 
+                leftShoulder = arts[i].transform; 
+                shoulderBaseL = arts[i].transform.localEulerAngles; 
+            }
+            if (n.Contains("Link_arm_r_01")) 
+            { 
+                rightShoulder = arts[i].transform; 
+                shoulderBaseR = arts[i].transform.localEulerAngles; 
+            }
+            if (name.Contains("OpenLoong"))
+            {
+                if (rightShoulder != null) 
+                shoulderBaseR = new Vector3(0f, 0f, -80f);
+                if (leftShoulder  != null) 
+                shoulderBaseL = new Vector3(0f, 0f,  80f);
+            }
+
+            if (n.Contains("shoulder_pitch") && !n.Contains("left") && !n.Contains("L_"))
+            { 
+                rightShoulder = arts[i].transform; 
+                shoulderBaseR = arts[i].transform.localEulerAngles; 
+            }
+            if (n.Contains("shoulder_pitch") && (n.Contains("left") || n.Contains("L_")))
+            { 
+                leftShoulder = arts[i].transform; 
+                shoulderBaseL = arts[i].transform.localEulerAngles; 
+            }
+            if ((n.Contains("elbow") || n.Contains("Elbow")) && !n.Contains("left") && !n.Contains("L_"))
+            { 
+                rightElbow = arts[i].transform; 
+                elbowBaseR = arts[i].transform.localEulerAngles; 
+            }
+            if ((n.Contains("elbow") || n.Contains("Elbow")) && (n.Contains("left") || n.Contains("L_")))
+            { 
+                leftElbow = arts[i].transform; 
+                elbowBaseL = arts[i].transform.localEulerAngles; }
+        }
     }
 
     public override void OnEpisodeBegin()
@@ -148,6 +207,7 @@ public class TrackAgent : GewuAgent
             ankL.target -= 15f * uf2 + 20f;
             ankL.target += 10f * (1f - uf2) + 0f;
             acts[10].xDrive = ankL;
+    
         }
 
         else // OpenLoong
@@ -294,6 +354,35 @@ public class TrackAgent : GewuAgent
             currentWaypointIndex++;
         }
     }
+
+    void LateUpdate()
+    {
+        float amp = 40f;
+
+        if (name.Contains("OpenLoong"))
+        {
+            arts[18].transform.localRotation *= Quaternion.Euler(180f, 0f, 0f);
+            arts[25].transform.localRotation *= Quaternion.Euler(180f, 0f, 0f);
+        }
+        if (name.Contains("OpenLoong") && rightShoulder != null && leftShoulder != null)
+        {
+            rightShoulder.localRotation = Quaternion.Euler(shoulderBaseR) * Quaternion.Euler(amp * (uf2 - 0.5f), 0f, 0f);
+            leftShoulder.localRotation = Quaternion.Euler(shoulderBaseL) * Quaternion.Euler(amp * (uf1 - 0.5f), 0f, 0f);
+        }
+
+        if (rightShoulder == null || leftShoulder == null)
+        return;
+
+        Vector3 axis = rootBody.transform.right;
+        rightShoulder.rotation = Quaternion.AngleAxis(amp * (uf2 - 0.5f), axis) * rightShoulder.parent.rotation * Quaternion.Euler(shoulderBaseR);
+        leftShoulder.rotation = Quaternion.AngleAxis(amp * (uf1 - 0.5f), axis) * leftShoulder.parent.rotation * Quaternion.Euler(shoulderBaseL);
+
+        if (rightElbow != null) 
+        rightElbow.localEulerAngles = elbowBaseR;
+        if (leftElbow != null) 
+        leftElbow.localEulerAngles = elbowBaseL;
+    }
+
 
     // out-of-bound penalty
     public void OnTriggerEnter(Collider other)

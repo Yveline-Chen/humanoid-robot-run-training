@@ -4398,9 +4398,9 @@ CapsuleCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.1
+  m_Radius: 0.2
   m_Height: 0.5
   m_Direction: 1
   m_Center: {x: 0, y: 0.1, z: 0}
@@ -7928,9 +7928,9 @@ ArticulationBody:
   m_XDrive:
     lowerLimit: -176.99812
     upperLimit: 153.00266
-    stiffness: 0
-    damping: 0
-    forceLimit: 25
+    stiffness: 2000
+    damping: 100
+    forceLimit: 200
     target: 0
     targetVelocity: 0
     driveType: 0
@@ -15913,7 +15913,7 @@ MonoBehaviour:
   Robot: 0
   BipedTargetMotion: 1
   BWalkPolicy: {fileID: 0}
-  BRunPolicy: {fileID: 5022602860645237092, guid: f65815dede0ced747b8e0d88714a6f6f,
+  BRunPolicy: {fileID: 5022602860645237092, guid: 8ee3028fd103a2247be7ea3faef40a61,
     type: 3}
   BJumpPolicy: {fileID: 0}
   QuadrupedTargetMotion: 0
@@ -16719,7 +16719,7 @@ CapsuleCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.2
   m_Height: 0.5
@@ -47483,9 +47483,9 @@ ArticulationBody:
   m_XDrive:
     lowerLimit: -176.99812
     upperLimit: 153.00266
-    stiffness: 0
-    damping: 0
-    forceLimit: 25
+    stiffness: 20000
+    damping: 100
+    forceLimit: 200
     target: 0
     targetVelocity: 0
     driveType: 0
