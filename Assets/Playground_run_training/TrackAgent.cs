@@ -43,7 +43,9 @@ public class TrackAgent : GewuAgent
         maxWPReached = currentWaypointIndex;
 
         // spawn: start line initially, random waypoints after reaching WP_04
-        bool useRandomStart = maxWPReached >= 4;
+        bool useRandomStart = train && maxWPReached >= 4;
+        if (useRandomStart && Random.value < 0.2f)
+        useRandomStart = false;
         currentWaypointIndex = useRandomStart ? Random.Range(1, maxWPReached + 1) : 0;
         totalWaypointsReached = 0;
         isFinishing = false;
@@ -186,15 +188,50 @@ public class TrackAgent : GewuAgent
             Vector3 finishPos = startPos;
             finishPos.y = rootBody.transform.position.y;
             Vector3 toFinish = finishPos - rootBody.transform.position;
+            float d = toFinish.magnitude;
             float fs = Vector3.Dot(rootBody.velocity, toFinish.normalized);
-            AddReward(fs * 0.1f);
-
-            if (toFinish.magnitude < 0.5f)
+            
+            if (train)
             {
-                AddReward(20.0f);
-                EndEpisode();
+                AddReward(fs * 0.1f);
+                if (d < 0.5f) 
+                {
+                    AddReward(20.0f); 
+                    EndEpisode();
+                    return;
+                }
             }
-            return;
+
+            if (d < 0.5f)
+            {
+                arts[0].velocity *= 0.9f;
+                arts[0].angularVelocity *= 0.9f;
+
+                for (int i = 0; i < ActionNum; i++)
+                {
+                    var dr = acts[i].xDrive;
+                    dr.target = acts[i].jointPosition[0];
+                    dr.stiffness = 3000f;
+                    dr.damping = 1000f;
+                    acts[i].xDrive = dr;
+                }
+
+                if (rootBody.velocity.magnitude < 0.1f)
+                {
+                    for (int i = 0; i < ActionNum; i++)
+                    {
+                        var dr = acts[i].xDrive;
+                        dr.target = 0f;
+                        dr.stiffness = 5000f;
+                        dr.damping = 2000f;
+                        acts[i].xDrive = dr;
+                    }
+                    arts[0].velocity = Vector3.zero;
+                    arts[0].angularVelocity = Vector3.zero;
+                    this.enabled = false;
+                }
+                return;
+            }
         }
 
         Transform targetWP = waypointManager.GetWaypoint(currentWaypointIndex);
