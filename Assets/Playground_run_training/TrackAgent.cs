@@ -15,6 +15,7 @@ public class TrackAgent : GewuAgent
     private bool isFinishing;
     private float rawSteer;
     private float initY;
+    private Quaternion initRot;
     private int maxWPReached = 0;
 
     public override void Initialize()
@@ -22,6 +23,7 @@ public class TrackAgent : GewuAgent
         base.Initialize();
         rootBody = arts[0];
         initY = rootBody.transform.position.y; 
+        initRot = rootBody.transform.rotation;
         startPos = rootBody.transform.position;
         waypointManager = FindObjectOfType<WaypointManager>();
         // Relay trigger events from root ArticulationBody to TrackAgent
@@ -58,7 +60,7 @@ public class TrackAgent : GewuAgent
             spawnPos.y = initY;
             Vector3 lookTarget = waypointManager.GetWaypoint(Mathf.Min(currentWaypointIndex + 1, waypointManager.GetWaypointCount() - 1)).position;
             lookTarget.y = spawnPos.y;
-            Quaternion spawnRot = Quaternion.LookRotation(lookTarget - spawnPos, Vector3.up);
+            Quaternion spawnRot = useRandomStart ? Quaternion.LookRotation(lookTarget - spawnPos, Vector3.up) : initRot;
             arts[0].TeleportRoot(spawnPos, spawnRot);
             arts[0].velocity = Vector3.zero;
             arts[0].angularVelocity = Vector3.zero;
@@ -106,10 +108,44 @@ public class TrackAgent : GewuAgent
 
         else if (robotName.Contains("G1"))
         {
-            steerIdx = 1;   
+            steerIdx = 2;   
             leftIdx = 2;   
             rightIdx = 8;
             steerScale = 20f;
+
+            for (int i = 0; i < ActionNum; i++)
+            FixStiffness(acts[i]);
+
+            var hipR = acts[0].xDrive;
+            hipR.target += -(24f * uf1 + 3f) + 12f * (1f - uf1);
+            hipR.stiffness = 6000f;  
+            hipR.forceLimit = 1000f;
+            acts[0].xDrive = hipR;
+
+            var hipL = acts[6].xDrive;
+            hipL.target += -(24f * uf2 + 3f) + 12f * (1f - uf2);
+            hipL.stiffness = 6000f;  
+            hipL.forceLimit = 1000f;
+            acts[6].xDrive = hipL;
+
+            var kneeR = acts[3].xDrive;
+            kneeR.target += 2f * (15f * uf1 + 20f);    
+            kneeR.target += 30f * uf1 + 10f;            
+            acts[3].xDrive = kneeR;
+
+            var kneeL = acts[9].xDrive;
+            kneeL.target += 2f * (15f * uf2 + 20f);
+            kneeL.target += 30f * uf2 + 10f;
+            acts[9].xDrive = kneeL;
+
+            var ankR = acts[4].xDrive;
+            ankR.target -= 15f * uf1 + 20f;                  
+            acts[4].xDrive = ankR;
+
+            var ankL = acts[10].xDrive;
+            ankL.target -= 15f * uf2 + 20f;
+            ankL.target += 10f * (1f - uf2) + 0f;
+            acts[10].xDrive = ankL;
         }
 
         else // OpenLoong
@@ -231,7 +267,16 @@ public class TrackAgent : GewuAgent
             EndEpisode();
         }
     }
+
+    void FixStiffness(ArticulationBody joint)
+    {
+        var d = joint.xDrive;
+        d.stiffness = 4000f;
+        d.forceLimit = 800f;
+        joint.xDrive = d;
+    }
 }
+
 public class TriggerForwarder : MonoBehaviour
 {
     public TrackAgent target;
