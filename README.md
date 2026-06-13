@@ -132,13 +132,20 @@ tensorboard --logdir results --port 6006
 
 ### 训练曲线分析
 
+<img width="1925" height="1225" alt="屏幕截图 2026-06-10 055917" src="https://github.com/user-attachments/assets/576c9964-04e1-4e95-aa52-b3cf91085b5c" />
+
 **OpenLoong（track_v1）**
 
-表现最佳。Cumulative Reward 从 0 持续上升至约 15,000，Episode Length 最终达到约 9,701 步，说明机器人能够长时间稳定运行并多次完成绕圈。Value Loss 在波动中维持在合理范围（10~110），Policy Loss 呈现 PPO 算法典型的周期性波动特征。训练过程分为三个明显阶段：基础运动学习（0~1M步）、路径追踪建立（1M~2M步）、策略持续优化（2M~5M步）。
+表现最佳。Cumulative Reward 从 0 持续上升至约 15,000，Episode Length 最终达到约 9,701 步，说明机器人能够长时间稳定运行并多次完成绕圈。Value Loss 在波动中维持在合理范围（10~110），Policy Loss 呈现 PPO 算法典型的周期性波动特征。训练过程分为三个阶段：基础运动学习（0~1M步）、路径追踪建立（1M~2M步）、策略持续优化（2M~5M步）。
+
+<img width="1929" height="1231" alt="屏幕截图 2026-06-11 030124" src="https://github.com/user-attachments/assets/1da803f4-ee7e-499a-82f5-7c97b606fda8" />
+
 
 **X02Lite（track_v2）**
 
 引入随机起点策略后，X02Lite 的 Cumulative Reward 最终稳定在约 6,611，Episode Length 约 5,066 步。与 OpenLoong 相比奖励绝对值较低，但曲线的上升趋势明显，在同等步数内学习效率高于 OpenLoong 的固定起点训练。Value Loss 收敛良好（最终约 38），说明随机起点策略有效提升了样本多样性。
+
+<img width="1939" height="1165" alt="屏幕截图 2026-06-13 142735" src="https://github.com/user-attachments/assets/449439cb-287e-4cb7-bbeb-3788a520adf5" />
 
 **G1（track_v3）**
 
