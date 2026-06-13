@@ -136,7 +136,7 @@ tensorboard --logdir results --port 6006
 
 **OpenLoong（track_v1）**
 
-表现最佳。Cumulative Reward 从 0 持续上升至约 15,000，Episode Length 最终达到约 9,701 步，说明机器人能够长时间稳定运行并多次完成绕圈。Value Loss 在波动中维持在合理范围（10~110），Policy Loss 呈现 PPO 算法典型的周期性波动特征。训练过程分为三个阶段：基础运动学习（0~1M步）、路径追踪建立（1M~2M步）、策略持续优化（2M~5M步）。
+表现最佳。Cumulative Reward 从 0 持续上升至约 15,000，Episode Length 最终达到约 9,701 步，说明机器人能够长时间稳定运行并多次完成绕圈。Value Loss 在波动中维持在合理范围（10~110），Policy Loss 呈现 PPO 算法典型的周期性波动特征。训练过程分为三个明显阶段：基础运动学习（0~1M步）、路径追踪建立（1M~2M步）、策略持续优化（2M~5M步）。
 
 <img width="1929" height="1231" alt="屏幕截图 2026-06-11 030124" src="https://github.com/user-attachments/assets/1da803f4-ee7e-499a-82f5-7c97b606fda8" />
 
@@ -172,7 +172,7 @@ Assets/
     └── Tensorflow_data               ← 训练时Tensorflow的监测数据（JSON格式）
 ```
 
-## 思考与总结
+## 总结
 
 本实验的主要挑战在于**弯道转向**。解决方案是通过 `useCustomReward` 开关关闭原始的速度奖励，引入基于路径点朝向的方向奖励，并添加偏离补偿项抵消对转弯的惩罚。
 
