@@ -97,13 +97,13 @@ G1 的腿部关节步态前馈参数与 OpenLoong 不同，在 `OnActionReceived
 
 ### 启动训练（每次只训练一款机器人）
 
-# 训练 OpenLoong（机器人重置时采用固定起点）
+### 训练 OpenLoong（机器人重置时采用固定起点）
 mlagents-learn Assets/Playground/track_config.yaml --run-id=track_v1 --force
 
-# 训练 X02Lite（机器人重置时采用随机起点）
+### 训练 X02Lite（机器人重置时采用随机起点）
 mlagents-learn Assets/Playground/track_config.yaml --run-id=track_v2 --force
 
-# 训练 G1（机器人重置时采用随机起点）
+### 训练 G1（机器人重置时采用随机起点）
 mlagents-learn Assets/Playground/track_config.yaml --run-id=track_v3 --force
 
 ### Tensorflow监控训练
