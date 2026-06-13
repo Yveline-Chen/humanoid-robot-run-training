@@ -47,6 +47,7 @@
 采用**继承扩展**的方式，在不污染原始平台代码的前提下实现跑道专用训练逻辑：
 
 GewuAgent（格物平台原有，仅添加 useCustomReward 开关）
+
     └── TrackAgent（本项目核心，封装所有跑道逻辑）
 
 `GewuAgent` 只做最小改动，所有跑道逻辑封装在 `TrackAgent` 中，原有场景的训练不受影响。
@@ -136,7 +137,7 @@ tensorboard --logdir results --port 6006
 
 **OpenLoong（track_v1）**
 
-表现最佳。Cumulative Reward 从 0 持续上升至约 15,000，Episode Length 最终达到约 9,701 步，说明机器人能够长时间稳定运行并多次完成绕圈。Value Loss 在波动中维持在合理范围（10-110），Policy Loss 呈现 PPO 算法典型的周期性波动特征。训练过程分为三个明显阶段：基础运动学习（0-1M步）、路径追踪建立（1M-2M步）、策略持续优化（2M-5M步）。
+表现最佳。Cumulative Reward 从 0 持续上升至约 15,000，Episode Length 最终达到约 9,701 步，说明机器人能够长时间稳定运行并多次完成绕圈。Value Loss 在波动中维持在合理范围（10-110），Policy Loss 呈现 PPO 算法典型的周期性波动特征。训练过程分为三个阶段：基础运动学习（0-1M步）、路径追踪建立（1M-2M步）、策略持续优化（2M-5M步）。
 
 <img width="1929" height="1231" alt="屏幕截图 2026-06-11 030124" src="https://github.com/user-attachments/assets/1da803f4-ee7e-499a-82f5-7c97b606fda8" />
 
