@@ -264,26 +264,48 @@ public class TrackAgent : GewuAgent
 
             if (d < 0.5f)
             {
-                arts[0].velocity *= 0.9f;
-                arts[0].angularVelocity *= 0.9f;
+                arts[0].velocity *= 0.7f;
+                arts[0].angularVelocity *= 0.7f;
 
                 for (int i = 0; i < ActionNum; i++)
                 {
                     var dr = acts[i].xDrive;
-                    dr.target = acts[i].jointPosition[0];
-                    dr.stiffness = 3000f;
-                    dr.damping = 1000f;
+                    dr.target *= 0.3f;
+                    dr.damping = 2000f;
                     acts[i].xDrive = dr;
                 }
 
-                if (rootBody.velocity.magnitude < 0.1f)
+                // freeze if tilted over
+                float roll  = Mathf.Abs(rootBody.transform.eulerAngles.x);
+                if (roll > 180f) 
+                roll = 360f - roll;
+                float pitch = Mathf.Abs(rootBody.transform.eulerAngles.z);
+                if (pitch > 180f) 
+                pitch = 360f - pitch;
+                if (roll > 30f || pitch > 30f)
                 {
                     for (int i = 0; i < ActionNum; i++)
                     {
                         var dr = acts[i].xDrive;
                         dr.target = 0f;
                         dr.stiffness = 5000f;
-                        dr.damping = 2000f;
+                        dr.damping = 3000f;
+                        acts[i].xDrive = dr;
+                    }
+                    arts[0].velocity = Vector3.zero;
+                    arts[0].angularVelocity = Vector3.zero;
+                    this.enabled = false;
+                    return;
+                }
+
+                if (d < 0.2f && rootBody.velocity.magnitude < 0.1f)
+                {
+                    for (int i = 0; i < ActionNum; i++)
+                    {
+                        var dr = acts[i].xDrive;
+                        dr.target = 0f;
+                        dr.stiffness = 8000f;
+                        dr.damping = 3000f;
                         acts[i].xDrive = dr;
                     }
                     arts[0].velocity = Vector3.zero;
